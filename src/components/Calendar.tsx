@@ -19,8 +19,6 @@ function Calendar({ date, setDate }:CalendarProp) {
 
     const formatter = new Intl.DateTimeFormat('ko');
 
-    const dateClick = () => {}
-
     return (
         <div>
             <div style={{display: 'flex'}}>
