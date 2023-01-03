@@ -1,43 +1,50 @@
 import { Button, Card, Form, InputGroup } from "react-bootstrap";
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Trash } from "react-bootstrap-icons";
+import { ReactSortable } from "react-sortablejs";
+import TodoList from "./TodoList";
 
 type TodoProp = {
     date: Date
-    setDate: React.Dispatch<React.SetStateAction<Date | undefined>>
+    // todoList?: {group: string, list: {id:number, name:string, status:symbol} []},
+    // setTodoList: React.Dispatch<React.SetStateAction<{group: string, list: {id:number, name:string, status:symbol} []} | undefined>>
 }
 
-const todoStatus = Object.freeze({
-    READY: Symbol('ready'),
-    DONE: Symbol('done')
-});
+function Todo({date}:TodoProp) {
 
-function Todo({date, setDate}:TodoProp) {
+    const [group, setGroup] = useState<string>('');
+    const [todoList, setTodoList] = useState<{[key:string]: {id:number, name:string, status:symbol} []}>();
 
-    const [todo, setTodo] = useState('');
-    const [todoMap, setTodoMap] = useState<Map<Date, {name:string, status:symbol}[]>>(new Map([[date, []]]));
+    const addGroup = (name:string) => {
 
-    const addTodo = (todo:string) => {
-        const todoList = todoMap.get(date) || [];
-        if(todo !== '' && todoList.find(o => o.name === todo) === undefined)
-            todoList.push({name: todo, status: todoStatus.READY});
-        todoMap.set(date, todoList);
-        setTodoMap(new Map(todoMap));
+        if(name === '') {
+            return;
+        }
+
+        if(todoList === undefined) {
+            setTodoList({[name]: []});
+            setGroup('');
+            return;
+        }
+
+        if(todoList[name] === undefined) {
+            todoList[name] = [];
+            setTodoList(todoList);
+            setGroup('');
+            return;
+        }
     }
 
-    const removeTodo = (name:string) => {
-        const todoList = todoMap.get(date)?.filter(todo => todo.name !== name) || [];
-        todoMap.set(date, todoList);
-        setTodoMap(new Map(todoMap));
+    const removeGroup = (name:string) => {
+        if(todoList && todoList[name]) {
+            delete todoList[name];
+            setTodoList(todoList);
+        }
     }
 
-    const setStatus = (name:string, status:symbol) => {
-        const todoList = todoMap.get(date) || [];
-        const todo = todoList.find(todo => todo.name === name);
-        if(todo !== undefined) {
-            todo.status = status;
-            todoMap.set(date, todoList);
-            setTodoMap(new Map(todoMap));
+    const keyDownEvent = (e:React.KeyboardEvent<HTMLInputElement>) => {
+        if(e.code === 'Enter') {
+            addGroup(group);
         }
     }
 
@@ -46,21 +53,26 @@ function Todo({date, setDate}:TodoProp) {
     return (
         <div>
             <InputGroup>
-                <Form.Control value={todo} onChange={e => setTodo(e.target.value)}></Form.Control>
-                <Button variant="primary" onClick={() => {addTodo(todo)}}>추가</Button>
+                <Form.Control value={group} onChange={e => setGroup(e.target.value)} onKeyDown={keyDownEvent}></Form.Control>
+                <Button variant="primary" onClick={() => {addGroup(group)}}>추가</Button>
             </InputGroup>
-                <h3>{formatter.format(date)}</h3>
-            <div style={{display: 'flex', flexDirection: 'column'}}>
-                {(todoMap.get(date) || []).map(todo => 
-                    <Card style={{ width: '100%', margin: '5px' }}>
-                        <Card.Body>
-                            <Card.Title style={ {textDecorationLine: todo.status === todoStatus.DONE ? 'line-through' : ''} }>
-                                <Form.Check inline onChange={e => {setStatus(todo.name, e.target.checked ? todoStatus.DONE : todoStatus.READY)}}/>
-                                {todo.name} 
-                                <Button variant="secondary" style={{float: 'right'}} onClick={() => {removeTodo(todo.name)}}><Trash /></Button>
-                            </Card.Title>
-                        </Card.Body>
-                    </Card>
+            <h3>{formatter.format(date)}</h3>
+            <div style={{display: 'flex', width: '1200px'}}>
+                {todoList !== undefined && Object.keys(todoList).map(group => 
+                    <ReactSortable key={group} group={{name: 'shared'}} list={todoList[group]} setList={() => {}}>
+                        <Card style={{width: '18rem', height: '40rem', margin: '5px' }}>
+                            <Card.Header>
+                                {group}
+                                <Button variant="secondary" style={{float: 'right'}} onClick={() => {removeGroup(group)}}><Trash /></Button>
+                            </Card.Header>
+                            <Card.Body>
+                                <TodoList todos={todoList[group]}></TodoList>
+                            </Card.Body>
+                            <Card.Footer>
+                                <Button variant="primary" onClick={() => {}}>추가</Button>
+                            </Card.Footer>
+                        </Card>
+                    </ReactSortable>
                 )}
             </div>
         </div>

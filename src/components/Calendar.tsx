@@ -3,8 +3,8 @@ import { Button, Card } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 
 type CalendarProp = {
-    date: Date | undefined
-    setDate: React.Dispatch<React.SetStateAction<Date | undefined>>
+    date: Date
+    setDate: React.Dispatch<React.SetStateAction<Date>>
 }
 
 function Calendar({ date, setDate }:CalendarProp) {
